@@ -5122,6 +5122,27 @@ const C = {
     }
     return [seen.join('; '), ok]
   },
+  async running_only_agents_by_default() {
+    // showFinishedAgents off (this fork's default): finished agents leave the band, the overflow line counts the
+    // running ones; on, the upstream "· N done" line returns
+    const run = async on => {
+      globalThis.OPTIONS = { showFinishedAgents: on }
+      try {
+        const E = await boot(file)
+        await E.call({ id: 't', title: 'Run', stages: [S('A', st('One', 'active'), 'Two')] })
+        for (let i = 1; i <= 8; i++) await E.spawn(`a${i}`, `Agent ${i}`)
+        await E.turnComplete('a1')
+        await E.turnComplete('a2')
+        return (await E.svgs()).map(s => s.source).join('\n')
+      } finally {
+        delete globalThis.OPTIONS
+      }
+    }
+    const off = await run(false)
+    const on = await run(true)
+    const ok = /more agents? running</.test(off) && !/ done</.test(off) && !off.includes('Agent 1<') && /· \d+ done</.test(on)
+    return [`off: running line ${/running</.test(off)}, no done ${!/ done</.test(off)}; on: done line ${/ done</.test(on)}`, ok]
+  },
   async more_agents_line_fits_a_narrow_strip(E) {
     // the "+N more agents" line of a big batch in a narrow window (50-60 columns, a long title beside the bar) ends
     // inside its strip: the done count gives way first, then the words are cut with an ellipsis

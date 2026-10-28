@@ -10,8 +10,9 @@ export async function boot(file, kept = new Map()) {
   const load = async () => {
     const mod = await import(new URL(file, import.meta.url).href + '?n=' + Math.random())
     hooks = []
-    // globalThis.OPTIONS plays the userConfig values the manifest declares
-    mod.register((event, a, b) => hooks.push(b ? { event, matcher: a, fn: b } : { event, matcher: null, fn: a }), globalThis.OPTIONS ?? {})
+    // globalThis.OPTIONS plays the userConfig values the manifest declares; the suite runs with showFinishedAgents on
+    // (upstream behaviour) unless a case sets it
+    mod.register((event, a, b) => hooks.push(b ? { event, matcher: a, fn: b } : { event, matcher: null, fn: a }), { showFinishedAgents: true, ...(globalThis.OPTIONS ?? {}) })
   }
   await load()
 

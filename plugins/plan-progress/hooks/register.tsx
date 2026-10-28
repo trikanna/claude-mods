@@ -575,6 +575,8 @@ const FLICKER_CSS = FLICKER.map(f => f.css).join('')
 // the wave's bands kept where they start, and the strips' dots and the terminal fill hold their middle brightness; the
 // clocks, the glides and the agents' status dots still move
 let isTwinkling = true
+// showFinishedAgents option (fork): false (default) keeps only agents still at work, and failed ones, in the Agents band
+let showsFinishedAgents = false
 
 // the engine refuses the whole band, every bar in it, when one picture's source passes 131072 characters. A plan of
 // hundreds of steps would get there through its marks and their hover tips (a few pixels apart they only cover each
@@ -1005,7 +1007,7 @@ const elapsed = (ms: number) => {
 
 // which strips show: all of a small batch; in a big one the unfinished first, the rest folded into one line
 function visibleAgents(p: Plan, now: number, max: number): { shown: AgentRun[]; hidden: AgentRun[] } | null {
-  const list = p.agents ?? []
+  const list = (p.agents ?? []).filter(a => showsFinishedAgents || a.state !== 'done')
   if (list.length === 0) return null
   const hasError = list.some(a => a.state === 'error')
   if (p.agentsDoneAt && now - p.agentsDoneAt > FOLD_MS && !hasError) return null
@@ -1319,7 +1321,8 @@ function stripsSvg(v: { shown: AgentRun[]; hidden: AgentRun[] }, all: AgentRun[]
     const y = v.shown.length === 0 ? 5 : STRIP_GAP
     const doneCount = v.hidden.filter(a => a.state === 'done').length
     const more = plural(v.hidden.length, 'more agent')
-    const moreText = stripW(`${more} · ${doneCount} done`) <= SW - 14 ? `${more} · ${doneCount} done` : fitStrip(more, SW - 14)
+    const full = showsFinishedAgents ? `${more} · ${doneCount} done` : `${more} running`
+    const moreText = stripW(full) <= SW - 14 ? full : fitStrip(more, SW - 14)
     rows.push({
       key: '+',
       height: y + STRIP_H,
@@ -1645,7 +1648,7 @@ function stripCells(v: { shown: AgentRun[]; hidden: AgentRun[] }, W: number, now
     const tint = mix(back, [128, 128, 128], 0.16)
     pill(g, y, 0, W, () => tint)
     const doneCount = v.hidden.filter(a => a.state === 'done').length
-    g.text(2, y, fit(`+${plural(v.hidden.length, 'more agent')} · ${doneCount} done`, W - 4), pack(dimOn(tint, hex(scheme().dim))), pack(tint))
+    g.text(2, y, fit(showsFinishedAgents ? `+${plural(v.hidden.length, 'more agent')} · ${doneCount} done` : `+${plural(v.hidden.length, 'more agent')} running`, W - 4), pack(dimOn(tint, hex(scheme().dim))), pack(tint))
   }
   return { cells: g.encode(), rows }
 }
@@ -2894,6 +2897,7 @@ export const register: Register = (on, options) => {
   const seconds = Number(options?.doneBarSeconds ?? 30)
   doneStaysMs = Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : 30_000
   isTwinkling = options?.twinkle !== false
+  showsFinishedAgents = options?.showFinishedAgents === true
 
   // per-turn bookkeeping; module variables are fine here, a reload just starts a fresh count
   let workCalls = 0

@@ -1,6 +1,6 @@
 {
   "name": "plan-progress",
-  "version": "1.0.0",
+  "version": "1.0.0-trikanna.1",
   "description": "Live plan progress bars above the Claude Code prompt: stages, steps, a pixel fill and soft sounds for decision, error and done",
   "author": {
     "name": "Kirill Serditov",
@@ -20,6 +20,12 @@
       "title": "Twinkle the pixel fill",
       "description": "Animate the dots of the progress fill and of the agent rows. Off, they are drawn still; clocks, glides and status dots still move",
       "default": true
+    },
+    "showFinishedAgents": {
+      "type": "boolean",
+      "title": "Show finished agents",
+      "description": "Off (this fork's default), the Agents band lists only agents still at work and failed ones, and the overflow line reads \"+N more agents running\". On, finished agents stay listed as upstream does",
+      "default": false
     }
   },
   "types": "./types/index.d.ts"
